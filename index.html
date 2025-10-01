@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EEG Gehirnwellen-Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+            colors: {
+              primary: "#4f46e5",
+              secondary: "#8b5cf6",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        box-sizing: border-box;
+      }
+      .active-wave {
+        ring: 2px;
+        ring-color: white;
+      }
+      .electrode {
+        transition: all 0.3s ease;
+      }
+      .electrode:hover {
+        transform: scale(1.2);
+        filter: brightness(1.2);
+      }
+      .active-electrode {
+        animation: pulse 2s infinite;
+        filter: brightness(1.3);
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-sans"
+  >
+    <nav class="bg-white shadow-lg sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex-shrink-0 flex items-center">
+            <span class="text-2xl font-bold text-gray-800"
+              >🧠 EEG Simulator</span
+            >
+          </div>
+          <div class="flex items-center space-x-4">
+            <button
+              id="btn-show-arduino-code"
+              class="px-3 py-2 rounded-md text-sm font-medium text-primary hover:bg-gray-100 transition duration-150"
+            >
+              📋 Arduino Code anzeigen
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="max-w-6xl mx-auto bg-white rounded-xl shadow-2xl p-6 sm:p-10 my-8"
+    >
+      <h1
+        class="text-4xl font-bold text-center text-gray-800 mb-6 border-b-2 border-primary pb-4"
+      >
+        Elektroenzephalogramm (EEG) Simulator
+      </h1>
+      <p class="text-center text-gray-600 mb-8 text-lg">
+        Dieser Simulator generiert synthetische Daten in Echtzeit, um zu
+        illustrieren, wie sich ein EEG-Signal in einem Kanal darstellen würde.
+      </p>
+
+      <div
+        class="mb-8 p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-l-4 border-primary rounded-lg"
+      >
+        <p class="text-sm font-semibold text-primary mb-2">
+          Aktuell simulierter Zustand:
+        </p>
+        <p
+          id="status-display"
+          class="text-3xl font-extrabold text-primary transition-colors duration-500"
+        >
+          🧘 Entspannung (Alpha-Wellen)
+        </p>
+      </div>
+
+      <div
+        id="arduino-code-modal"
+        class="hidden bg-gray-50 p-6 rounded-lg shadow-inner mb-8 border border-gray-300"
+      >
+        <h3 class="text-xl font-semibold mb-3 text-gray-700">
+          Basis Arduino Code (C/C++)
+        </h3>
+        <pre
+          class="bg-gray-800 text-green-400 p-4 rounded-lg overflow-x-auto text-sm"
+        >
+// SIMULADOR EEG - CÓDIGO ARDUINO
+const int PIN_LECTURA_EEG = A0; 
+const long BAUD_RATE = 9600; 
+
+void setup() {
+  Serial.begin(BAUD_RATE);
+  pinMode(PIN_LECTURA_EEG, INPUT);
+}
+
+void loop() {
+  // Lectura del sensor EEG simulado
+  int valor_eeg = analogRead(PIN_LECTURA_EEG);
+  
+  // Envío de datos por serial
+  Serial.println(valor_eeg);
+  
+  // Control de frecuencia de muestreo (250 Hz)
+  delay(4); 
+}
+        </pre>
+        <button
+          id="btn-hide-arduino-code"
+          class="mt-4 px-4 py-2 text-sm font-semibold text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition duration-150"
+        >
+          Code ausblenden
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div
+          class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-lg shadow-lg"
+        >
+          <h3
+            class="text-xl font-semibold mb-6 text-gray-700 flex items-center"
+          >
+            🧠 Gehirnzustände
+          </h3>
+          <div class="space-y-4">
+            <button
+              id="btn-alpha"
+              class="w-full px-6 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-200 font-medium text-left flex items-center justify-between shadow-md active-wave"
+            >
+              <span>🧘 Alpha (8-13 Hz) - Entspannung</span>
+              <span class="text-sm opacity-75">Meditation, Ruhe</span>
+            </button>
+            <button
+              id="btn-beta"
+              class="w-full px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 font-medium text-left flex items-center justify-between shadow-md"
+            >
+              <span>🧠 Beta (13-30 Hz) - Konzentration</span>
+              <span class="text-sm opacity-75">Arbeit, Studium</span>
+            </button>
+            <button
+              id="btn-theta"
+              class="w-full px-6 py-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-200 font-medium text-left flex items-center justify-between shadow-md"
+            >
+              <span>😴 Theta (4-8 Hz) - Schläfrigkeit</span>
+              <span class="text-sm opacity-75">Kreativität, Träume</span>
+            </button>
+            <button
+              id="btn-delta"
+              class="w-full px-6 py-4 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition duration-200 font-medium text-left flex items-center justify-between shadow-md"
+            >
+              <span>💤 Delta (0.5-4 Hz) - Tiefschlaf</span>
+              <span class="text-sm opacity-75">Regeneration</span>
+            </button>
+            <button
+              id="btn-adhd"
+              class="w-full px-6 py-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 font-medium text-left flex items-center justify-between shadow-md"
+            >
+              <span>⚡ ADHS - Aufmerksamkeitsdefizit</span>
+              <span class="text-sm opacity-75">Irreguläre Wellen</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-lg shadow-lg"
+        >
+          <h3
+            class="text-xl font-semibold mb-6 text-gray-700 flex items-center"
+          >
+            ⚙️ Simulations-Steuerung
+          </h3>
+
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-3"
+                >Amplitude (µV)</label
+              >
+              <input
+                type="range"
+                id="amplitude-slider"
+                min="10"
+                max="200"
+                value="50"
+                class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>10</span>
+                <span id="amplitude-value" class="font-semibold text-primary"
+                  >50 µV</span
+                >
+                <span>200</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-3"
+                >Rauschen (%)</label
+              >
+              <input
+                type="range"
+                id="noise-slider"
+                min="0"
+                max="50"
+                value="10"
+                class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0</span>
+                <span id="noise-value" class="font-semibold text-primary"
+                  >10%</span
+                >
+                <span>50</span>
+              </div>
+            </div>
+
+            <button
+              id="btn-start-stop"
+              class="w-full px-6 py-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition duration-200 font-medium text-lg shadow-md"
+            >
+              ▶️ Simulation starten
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="text-2xl font-semibold mb-6 text-gray-700 flex items-center">
+          🧠 Position der EEG-Elektroden
+        </h3>
+        <div
+          class="bg-gradient-to-br from-gray-900 to-blue-900 p-6 rounded-lg shadow-lg border-2 border-gray-300"
+        >
+          <div class="flex justify-center">
+            <svg
+              width="400"
+              height="300"
+              viewBox="0 0 400 300"
+              class="max-w-full"
+            >
+              <ellipse
+                cx="200"
+                cy="150"
+                rx="120"
+                ry="100"
+                fill="#f3f4f6"
+                stroke="#374151"
+                stroke-width="3"
+              />
+
+              <ellipse cx="200" cy="60" rx="8" ry="15" fill="#d1d5db" />
+
+              <circle
+                id="electrode-fp1"
+                cx="170"
+                cy="90"
+                r="8"
+                fill="#ef4444"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="170"
+                y="95"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                Fp1
+              </text>
+
+              <circle
+                id="electrode-fp2"
+                cx="230"
+                cy="90"
+                r="8"
+                fill="#ef4444"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="230"
+                y="95"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                Fp2
+              </text>
+
+              <circle
+                id="electrode-c3"
+                cx="140"
+                cy="150"
+                r="8"
+                fill="#10b981"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer active-electrode"
+              />
+              <text
+                x="140"
+                y="155"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                C3
+              </text>
+
+              <circle
+                id="electrode-cz"
+                cx="200"
+                cy="130"
+                r="8"
+                fill="#3b82f6"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="200"
+                y="135"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                Cz
+              </text>
+
+              <circle
+                id="electrode-c4"
+                cx="260"
+                cy="150"
+                r="8"
+                fill="#10b981"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="260"
+                y="155"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                C4
+              </text>
+
+              <circle
+                id="electrode-t3"
+                cx="100"
+                cy="150"
+                r="8"
+                fill="#8b5cf6"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="100"
+                y="155"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                T3
+              </text>
+
+              <circle
+                id="electrode-t4"
+                cx="300"
+                cy="150"
+                r="8"
+                fill="#8b5cf6"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="300"
+                y="155"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                T4
+              </text>
+
+              <circle
+                id="electrode-p3"
+                cx="160"
+                cy="190"
+                r="8"
+                fill="#f59e0b"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="160"
+                y="195"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                P3
+              </text>
+
+              <circle
+                id="electrode-pz"
+                cx="200"
+                cy="180"
+                r="8"
+                fill="#f59e0b"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="200"
+                y="185"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                Pz
+              </text>
+
+              <circle
+                id="electrode-p4"
+                cx="240"
+                cy="190"
+                r="8"
+                fill="#f59e0b"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="240"
+                y="195"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                P4
+              </text>
+
+              <circle
+                id="electrode-o1"
+                cx="180"
+                cy="230"
+                r="8"
+                fill="#6366f1"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="180"
+                y="235"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                O1
+              </text>
+
+              <circle
+                id="electrode-o2"
+                cx="220"
+                cy="230"
+                r="8"
+                fill="#6366f1"
+                stroke="#fff"
+                stroke-width="2"
+                class="electrode cursor-pointer"
+              />
+              <text
+                x="220"
+                y="235"
+                text-anchor="middle"
+                fill="white"
+                font-size="10"
+                font-weight="bold"
+              >
+                O2
+              </text>
+
+              <g id="electrode-connections" opacity="0.3">
+                <line
+                  x1="140"
+                  y1="150"
+                  x2="200"
+                  y2="400"
+                  stroke="#10b981"
+                  stroke-width="2"
+                  stroke-dasharray="5,5"
+                />
+              </g>
+            </svg>
+          </div>
+
+          <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+              <span class="text-white">Frontal (Fp1, Fp2)</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+              <span class="text-white">Zentral (C3, C4)</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-purple-500 rounded-full"></div>
+              <span class="text-white">Temporal (T3, T4)</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
+              <span class="text-white">Parietal (P3, P4, Pz)</span>
+            </div>
+          </div>
+
+          <div class="mt-4 text-center">
+            <p class="text-white text-sm">
+              <span
+                class="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"
+              ></span>
+              <strong>Aktive Elektrode:</strong>
+              <span id="active-electrode-name">C3 (Motor Cortex)</span>
+            </p>
+            <p class="text-gray-300 text-xs mt-2">
+              Klicken Sie auf eine Elektrode, um die Signalquelle zu ändern
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="text-2xl font-semibold mb-6 text-gray-700 flex items-center">
+          📊 EEG-Signal in Echtzeit
+        </h3>
+        <div class="bg-black p-4 rounded-lg shadow-lg border-2 border-gray-300">
+          <canvas
+            id="eeg-chart"
+            width="1000"
+            height="400"
+            class="w-full"
+          ></canvas>
+        </div>
+
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div
+            class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-md text-center"
+          >
+            <div class="text-sm text-gray-600 mb-1">Frequenz</div>
+            <div
+              id="frequency-display"
+              class="text-2xl font-bold text-blue-600"
+            >
+              10.5 Hz
+            </div>
+          </div>
+          <div
+            class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg shadow-md text-center"
+          >
+            <div class="text-sm text-gray-600 mb-1">Amplitude</div>
+            <div
+              id="amplitude-display"
+              class="text-2xl font-bold text-green-600"
+            >
+              50 µV
+            </div>
+          </div>
+          <div
+            class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg shadow-md text-center"
+          >
+            <div class="text-sm text-gray-600 mb-1">Samples/Sekunde</div>
+            <div class="text-2xl font-bold text-purple-600">250 Hz</div>
+          </div>
+          <div
+            class="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg shadow-md text-center"
+          >
+            <div class="text-sm text-gray-600 mb-1">Zeit</div>
+            <div id="time-display" class="text-2xl font-bold text-orange-600">
+              0.0s
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-lg border border-indigo-200"
+      >
+        <h4 class="text-lg font-semibold text-indigo-800 mb-3">
+          ℹ️ Informationen zu Gehirnwellen
+        </h4>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-indigo-700"
+        >
+          <div>
+            <strong>Alpha (8-13 Hz):</strong> Zustand bewusster Entspannung,
+            leichte Meditation.
+          </div>
+          <div>
+            <strong>Beta (13-30 Hz):</strong> Zustand der Wachsamkeit,
+            Konzentration und mentaler Aktivität.
+          </div>
+          <div>
+            <strong>Theta (4-8 Hz):</strong> Zustand der Schläfrigkeit,
+            Kreativität und Gedächtnis.
+          </div>
+          <div>
+            <strong>Delta (0.5-4 Hz):</strong> Tiefschlaf und
+            Regenerationsprozesse.
+          </div>
+          <div class="md:col-span-2">
+            <strong>ADHS:</strong> Irreguläre Muster mit Theta-Wellen-Überschuss
+            und Beta-Defizit, charakteristisch für Aufmerksamkeitsdefizit- und
+            Hyperaktivitätsstörung.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ====================================================================
+      // 1. CONFIGURACIÓN INICIAL Y VARIABLES GLOBALES
+      // ====================================================================
+
+      let isRunning = false; // Estado de la simulación (true = corriendo)
+      let currentWaveType = "alpha"; // Tipo de onda cerebral activa (ej: alpha, beta)
+      let amplitude = 50; // Amplitud actual del EEG en microvoltios (µV)
+      let noiseLevel = 10; // Nivel de ruido o artefactos como porcentaje (%)
+      let time = 0; // Tiempo total transcurrido de la simulación
+      let animationId; // ID del frame de animación para control (requestAnimationFrame)
+      let eegData = []; // Array que almacena los valores de amplitud del EEG para dibujar el gráfico
+      let maxDataPoints = 500; // Máximo de puntos de datos visibles en el gráfico
+      let activeElectrode = "c3"; // Identificador del electrodo que está 'leyendo' la señal
+
+      // Objeto que define las propiedades de cada tipo de onda cerebral simulada
+      const waveTypes = {
+        alpha: {
+          freq: 10.5,
+          name: "🧘 Entspannung (Alpha-Wellen)",
+          color: "#10b981",
+        },
+        beta: {
+          freq: 20,
+          name: "🧠 Konzentration (Beta-Wellen)",
+          color: "#3b82f6",
+        },
+        theta: {
+          freq: 6,
+          name: "😴 Schläfrigkeit (Theta-Wellen)",
+          color: "#8b5cf6",
+        },
+        delta: {
+          freq: 2,
+          name: "💤 Tiefschlaf (Delta-Wellen)",
+          color: "#6366f1",
+        },
+        adhd: {
+          freq: 7,
+          name: "⚡ ADHS - Aufmerksamkeitsdefizit",
+          color: "#ef4444",
+        },
+      };
+
+      // Objeto que define las propiedades de los electrodos (según el sistema 10-20)
+      const electrodes = {
+        fp1: {
+          name: "Fp1 (Frontal Links)",
+          region: "Frontal",
+          modifier: 1.1, // Modificador de amplitud para simular características regionales
+        },
+        fp2: {
+          name: "Fp2 (Frontal Rechts)",
+          region: "Frontal",
+          modifier: 1.1,
+        },
+        c3: { name: "C3 (Motor Cortex)", region: "Central", modifier: 1.0 },
+        cz: { name: "Cz (Central)", region: "Central", modifier: 0.9 },
+        c4: { name: "C4 (Motor Cortex)", region: "Central", modifier: 1.0 },
+        t3: {
+          name: "T3 (Temporal Links)",
+          region: "Temporal",
+          modifier: 0.8,
+        },
+        t4: {
+          name: "T4 (Temporal Rechts)",
+          region: "Temporal",
+          modifier: 0.8,
+        },
+        p3: {
+          name: "P3 (Parietal Links)",
+          region: "Parietal",
+          modifier: 0.9,
+        },
+        pz: {
+          name: "Pz (Parietal Zentral)",
+          region: "Parietal",
+          modifier: 0.85,
+        },
+        p4: {
+          name: "P4 (Parietal Rechts)",
+          region: "Parietal",
+          modifier: 0.9,
+        },
+        o1: {
+          name: "O1 (Okzipital Links)",
+          region: "Occipital",
+          modifier: 0.7,
+        },
+        o2: {
+          name: "O2 (Okzipital Rechts)",
+          region: "Occipital",
+          modifier: 0.7,
+        },
+      };
+
+      // Obtención del contexto del canvas para dibujar el gráfico
+      const canvas = document.getElementById("eeg-chart");
+      const ctx = canvas.getContext("2d");
+
+      // Referencias a elementos del DOM (Botones, sliders, displays)
+      const statusDisplay = document.getElementById("status-display");
+      const amplitudeSlider = document.getElementById("amplitude-slider");
+      const amplitudeValue = document.getElementById("amplitude-value");
+      const noiseSlider = document.getElementById("noise-slider");
+      const noiseValue = document.getElementById("noise-value");
+      const startStopBtn = document.getElementById("btn-start-stop");
+      const frequencyDisplay = document.getElementById("frequency-display");
+      const amplitudeDisplay = document.getElementById("amplitude-display");
+      const timeDisplay = document.getElementById("time-display");
+      const activeElectrodeName = document.getElementById(
+        "active-electrode-name"
+      );
+
+      // ====================================================================
+      // 2. EVENT LISTENERS (MANEJO DE INTERACCIÓN DE USUARIO)
+      // ====================================================================
+
+      // Listener para el control deslizante de Amplitud (µV)
+      amplitudeSlider.addEventListener("input", (e) => {
+        amplitude = parseInt(e.target.value);
+        amplitudeValue.textContent = amplitude + " µV";
+        amplitudeDisplay.textContent = amplitude + " µV";
+      });
+
+      // Listener para el control deslizante de Ruido (%)
+      noiseSlider.addEventListener("input", (e) => {
+        noiseLevel = parseInt(e.target.value);
+        noiseValue.textContent = noiseLevel + "%";
+      });
+
+      // Listener para el botón de Iniciar/Detener Simulación
+      startStopBtn.addEventListener("click", toggleSimulation);
+
+      // Listeners para botones de tipo de onda cerebral (Alpha, Beta, Theta, etc.)
+      document
+        .getElementById("btn-alpha")
+        .addEventListener("click", () => setWaveType("alpha"));
+      document
+        .getElementById("btn-beta")
+        .addEventListener("click", () => setWaveType("beta"));
+      document
+        .getElementById("btn-theta")
+        .addEventListener("click", () => setWaveType("theta"));
+      document
+        .getElementById("btn-delta")
+        .addEventListener("click", () => setWaveType("delta"));
+      document
+        .getElementById("btn-adhd")
+        .addEventListener("click", () => setWaveType("adhd"));
+
+      // Listeners para los círculos SVG de los electrodos
+      Object.keys(electrodes).forEach((electrodeId) => {
+        document
+          .getElementById("electrode-" + electrodeId)
+          .addEventListener("click", () => {
+            setActiveElectrode(electrodeId);
+          });
+      });
+
+      // Listener para mostrar el modal del código Arduino
+      document
+        .getElementById("btn-show-arduino-code")
+        .addEventListener("click", () => {
+          document
+            .getElementById("arduino-code-modal")
+            .classList.remove("hidden");
+        });
+
+      // Listener para ocultar el modal del código Arduino
+      document
+        .getElementById("btn-hide-arduino-code")
+        .addEventListener("click", () => {
+          document.getElementById("arduino-code-modal").classList.add("hidden");
+        });
+
+      // ====================================================================
+      // 3. FUNCIONES DE LÓGICA DE SIMULACIÓN Y CONTROL
+      // ====================================================================
+
+      /**
+       * Cambia el tipo de onda cerebral activa y actualiza la UI.
+       * @param {string} type - El identificador de la onda (ej: 'alpha').
+       */
+      function setWaveType(type) {
+        currentWaveType = type;
+        const wave = waveTypes[type];
+        statusDisplay.textContent = wave.name;
+        frequencyDisplay.textContent = wave.freq + " Hz";
+
+        // Lógica para actualizar el botón activo (anillo blanco)
+        document
+          .querySelectorAll(
+            '[id^="btn-alpha"], [id^="btn-beta"], [id^="btn-theta"], [id^="btn-delta"], [id^="btn-adhd"]'
+          )
+          .forEach((btn) => {
+            btn.classList.remove("active-wave", "ring-2", "ring-white");
+          });
+        document
+          .getElementById("btn-" + type)
+          .classList.add("active-wave", "ring-2", "ring-white");
+      }
+
+      /**
+       * Establece qué electrodo se está 'simulando' y actualiza la visualización SVG.
+       * @param {string} electrodeId - El identificador del electrodo (ej: 'c3').
+       */
+      function setActiveElectrode(electrodeId) {
+        activeElectrode = electrodeId;
+        const electrode = electrodes[electrodeId];
+        activeElectrodeName.textContent = electrode.name;
+
+        // Lógica para actualizar el círculo SVG activo (efecto 'pulse')
+        document.querySelectorAll(".electrode").forEach((el) => {
+          el.classList.remove("active-electrode");
+        });
+        document
+          .getElementById("electrode-" + electrodeId)
+          .classList.add("active-electrode");
+
+        // Reinicia la data para que el gráfico muestre el nuevo patrón inmediatamente
+        if (isRunning) {
+          eegData = [];
+          time = 0;
+        }
+      }
+
+      /**
+       * Genera un único punto de dato EEG sintético.
+       * Utiliza la función seno para generar ondas y aplica modificadores de región/ruido.
+       * @returns {number} Una muestra de amplitud de EEG.
+       */
+      function generateEEGSample() {
+        const wave = waveTypes[currentWaveType];
+        const frequency = wave.freq;
+        const electrode = electrodes[activeElectrode];
+        const electrodeModifier = electrode.modifier;
+
+        if (currentWaveType === "adhd") {
+          // --- PATRÓN ESPECÍFICO TDAH (Theta Dominante + Beta Reducida + Ruido) ---
+          let sample = 0;
+
+          // Ondas theta dominantes (frecuencias de 5-6 Hz con amplitud aumentada)
+          sample +=
+            amplitude *
+            electrodeModifier *
+            1.2 *
+            Math.sin(2 * Math.PI * 6 * time);
+          sample +=
+            amplitude *
+            electrodeModifier *
+            0.8 *
+            Math.sin(2 * Math.PI * 5 * time + Math.PI / 3);
+
+          // Déficit de ondas beta (baja amplitud para simular concentración reducida)
+          sample +=
+            amplitude *
+            electrodeModifier *
+            0.3 *
+            Math.sin(2 * Math.PI * 15 * time);
+
+          // Picos irregulares (hiperactividad esporádica)
+          if (Math.random() < 0.1) {
+            sample +=
+              amplitude *
+              electrodeModifier *
+              0.7 *
+              Math.sin(2 * Math.PI * 25 * time);
+          }
+
+          // Alta variabilidad
+          const variability =
+            (Math.random() - 0.5) * amplitude * electrodeModifier * 0.4;
+          sample += variability;
+
+          // Ruido aumentado (dificultad de filtrado mental)
+          const adhdNoise =
+            (Math.random() - 0.5) *
+            2 *
+            amplitude *
+            electrodeModifier *
+            ((noiseLevel + 15) / 100);
+          sample += adhdNoise;
+
+          return sample;
+        } else {
+          // --- PATRONES NORMALES (Sinusoidal principal + Armónicos) ---
+          // Onda fundamental: y = A * sin(2πft)
+          let sample =
+            amplitude *
+            electrodeModifier *
+            Math.sin(2 * Math.PI * frequency * time);
+
+          // Armónicos para realismo (frecuencias 2f y 3f con menor amplitud)
+          sample +=
+            amplitude *
+            electrodeModifier *
+            0.3 *
+            Math.sin(2 * Math.PI * frequency * 2 * time);
+          sample +=
+            amplitude *
+            electrodeModifier *
+            0.1 *
+            Math.sin(2 * Math.PI * frequency * 3 * time);
+
+          // Variaciones específicas por región cerebral (simulación de actividad)
+          if (electrode.region === "Frontal") {
+            sample += amplitude * 0.2 * Math.sin(2 * Math.PI * 18 * time); // Más actividad beta
+          } else if (electrode.region === "Occipital") {
+            sample += amplitude * 0.3 * Math.sin(2 * Math.PI * 10 * time); // Más actividad alpha
+          } else if (electrode.region === "Temporal") {
+            sample += amplitude * 0.15 * Math.sin(2 * Math.PI * 7 * time); // Patrones más complejos
+          }
+
+          // Agrega ruido aleatorio (basado en el slider de Ruido)
+          const noise =
+            (Math.random() - 0.5) *
+            2 *
+            amplitude *
+            electrodeModifier *
+            (noiseLevel / 100);
+          sample += noise;
+
+          return sample;
+        }
+      }
+
+      /**
+       * Dibuja la señal EEG almacenada en el array 'eegData' en el canvas.
+       */
+      function drawChart() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpia el canvas
+
+        if (eegData.length < 2) return;
+
+        // Cálculo de escalas para mapear los datos al tamaño del canvas
+        const xScale = canvas.width / maxDataPoints; // Escala horizontal (tiempo/puntos)
+        const yCenter = canvas.height / 2; // Centro del gráfico (0 µV)
+        // Escala vertical: el 80% del alto se usa para mapear +/- la amplitud máxima
+        const yScale = (canvas.height * 0.8) / (amplitude * 2);
+
+        // --- Dibujar líneas de referencia ---
+        ctx.strokeStyle = "#4b5563";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, yCenter);
+        ctx.lineTo(canvas.width, yCenter); // Línea de base (0 µV)
+        ctx.stroke();
+
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 0.5;
+        // Dibujar líneas horizontales de referencia para amplitud
+        for (let i = 1; i <= 4; i++) {
+          const deltaY = (amplitude * yScale * i) / 2;
+          // Líneas positivas
+          ctx.beginPath();
+          ctx.moveTo(0, yCenter - deltaY);
+          ctx.lineTo(canvas.width, yCenter - deltaY);
+          ctx.stroke();
+          // Líneas negativas
+          ctx.beginPath();
+          ctx.moveTo(0, yCenter + deltaY);
+          ctx.lineTo(canvas.width, yCenter + deltaY);
+          ctx.stroke();
+        }
+
+        // --- Dibujar la señal EEG ---
+        ctx.strokeStyle = waveTypes[currentWaveType].color; // Color basado en el tipo de onda
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        // Itera sobre los datos y dibuja la línea
+        for (let i = 0; i < eegData.length; i++) {
+          const x = i * xScale;
+          // Mapeo vertical: inverte el eje Y y aplica la escala
+          const y = yCenter - eegData[i] * yScale;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        ctx.stroke();
+      }
+
+      /**
+       * Bucle principal de la simulación: genera datos, actualiza el tiempo y repinta el gráfico.
+       */
+      function animate() {
+        if (!isRunning) return;
+
+        // 1. Generar y almacenar nueva muestra
+        const sample = generateEEGSample();
+        eegData.push(sample);
+
+        // 2. Desplazar datos antiguos para simular un gráfico en movimiento (scroll)
+        if (eegData.length > maxDataPoints) {
+          eegData.shift();
+        }
+
+        // 3. Actualizar el tiempo transcurrido (asumiendo 250 Hz de muestreo)
+        time += 1 / 250;
+        timeDisplay.textContent = time.toFixed(1) + "s";
+
+        // 4. Dibujar el gráfico
+        drawChart();
+
+        // 5. Continuar el bucle de animación
+        animationId = requestAnimationFrame(animate);
+      }
+
+      /**
+       * Inicia o detiene la simulación y actualiza el botón de control.
+       */
+      function toggleSimulation() {
+        if (isRunning) {
+          // Detener
+          isRunning = false;
+          cancelAnimationFrame(animationId);
+          startStopBtn.innerHTML = "▶️ Simulation starten";
+          startStopBtn.classList.remove("bg-red-500", "hover:bg-red-600");
+          startStopBtn.classList.add("bg-primary", "hover:bg-primary/90");
+        } else {
+          // Iniciar
+          isRunning = true;
+          time = 0;
+          eegData = []; // Limpia la data al iniciar
+          startStopBtn.innerHTML = "⏹️ Simulation stoppen";
+          startStopBtn.classList.remove("bg-primary", "hover:bg-primary/90");
+          startStopBtn.classList.add("bg-red-500", "hover:bg-red-600");
+          animate();
+        }
+      }
+
+      // ====================================================================
+      // 4. INICIALIZACIÓN
+      // ====================================================================
+
+      // Establece el estado inicial al cargar la página
+      setWaveType("alpha");
+      drawChart();
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'98670b1a80148c3d',t:'MTc1OTEwMjM4MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
